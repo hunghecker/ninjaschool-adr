@@ -1,0 +1,104 @@
+name: Build Ninja School APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'game/game.jar'
+      - 'scripts/prepare_j2me_loader.sh'
+      - '.github/workflows/build-apk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout port kit
+        uses: actions/checkout@v5
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android platform and NDK
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager "platforms;android-34" "build-tools;34.0.0" "ndk;22.1.7171670"
+
+      # Checkout the J2ME Loader repository at the exact known-good commit.
+      # Using actions/checkout avoids `git fetch origin <short-SHA>`, which GitHub
+      # rejects with exit code 128 because a short commit SHA is not a remote ref.
+      - name: Checkout pinned J2ME Loader
+        uses: actions/checkout@v5
+        with:
+          repository: nikita36078/J2ME-Loader
+          ref: 9b0fa48a0a0d1e61376c0b9af28b3d2caec0a4cc
+          path: j2me-loader
+          fetch-depth: 1
+
+      - name: Verify J2ME Loader revision
+        shell: bash
+        run: |
+          cd j2me-loader
+          echo "J2ME Loader HEAD: $(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "9b0fa48a0a0d1e61376c0b9af28b3d2caec0a4cc"
+
+      - name: Inject compiled MIDlet JAR
+        shell: bash
+        run: |
+          ./scripts/prepare_j2me_loader.sh "$GITHUB_WORKSPACE/j2me-loader" "$GITHUB_WORKSPACE/game/game.jar"
+
+      - name: Create build keystore configuration
+        shell: bash
+        run: |
+          cd j2me-loader
+          keytool -genkeypair -noprompt \
+            -keystore build-debug.jks \
+            -storepass android \
+            -keypass android \
+            -alias androiddebugkey \
+            -dname "CN=Android Debug,O=Android,C=US" \
+            -keyalg RSA -keysize 2048 -validity 10000
+          cat > keystore.properties <<'PROPS'
+          keyAlias=androiddebugkey
+          keyPassword=android
+          storeFile=../build-debug.jks
+          storePassword=android
+          PROPS
+
+      - name: Build standalone MIDlet APK
+        shell: bash
+        run: |
+          cd j2me-loader
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleMidletDebug --stacktrace
+
+      - name: Collect APK
+        shell: bash
+        run: |
+          mkdir -p dist
+          APK="$(find j2me-loader/app/build/outputs/apk -type f \( -name '*midlet*debug*.apk' -o -name '*midlet-debug.apk' \) | head -n 1)"
+          if [ -z "$APK" ] || [ ! -f "$APK" ]; then
+            echo "APK output not found" >&2
+            find j2me-loader/app/build/outputs -maxdepth 6 -type f -print || true
+            exit 1
+          fi
+          cp "$APK" dist/NinjaSchoolOffline_v1.25.42_LAN_BluetoothPAN_MPfix.apk
+          sha256sum dist/*.apk | tee dist/SHA256SUMS.txt
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NinjaSchoolOffline-v1.25.42-APK
+          path: dist/*
+          if-no-files-found: error

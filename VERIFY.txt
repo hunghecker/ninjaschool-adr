@@ -1,0 +1,9 @@
+Expected MIDlet:
+  MIDlet-1: NinjaSchoolOffline,/icon.png,GameMidlet
+  MIDlet-Version: 1.25.42
+  MicroEdition-Configuration: CLDC-1.1
+  MicroEdition-Profile: MIDP-2.0
+  MIDlet-Permissions: javax.microedition.io.Connector.socket
+  Network-Modes: Offline,TCP-LAN,Bluetooth-PAN
+
+The game JAR in this kit is the patched LAN/Bluetooth-PAN/MP-fix build from this conversation.

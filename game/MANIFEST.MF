@@ -1,0 +1,20 @@
+Manifest-Version: 1.0
+MIDlet-1: NinjaSchoolOffline,/icon.png,GameMidlet
+MIDlet-Vendor: KhanhNguyen9872
+MIDlet-Version: 1.25.42
+MIDlet-Name: NinjaSchoolOffline
+MIDlet-Description: NinjaSchoolOffline by KhanhNguyen9872
+MIDlet-Icon: /icon.png
+MicroEdition-Configuration: CLDC-1.1
+MicroEdition-Profile: MIDP-2.0
+MIDlet-Data-Size: 65536
+Nokia-MIDlet-Category: Game
+Implementation-Title: NinjaSchoolOffline
+Implementation-Vendor: KhanhNguyen9872
+Implementation-Author: KhanhNguyen9872
+Offline-Server: embedded-cldc
+Offline-Transport: direct-cldc-rms
+License: Apache-2.0
+Code-Obfuscation: ProGuard-name-only
+MIDlet-Permissions: javax.microedition.io.Connector.socket
+Network-Modes: Offline,TCP-LAN,Bluetooth-PAN

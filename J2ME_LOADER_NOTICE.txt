@@ -1,0 +1,6 @@
+Runtime target: J2ME Loader by nikita36078
+Repository: https://github.com/nikita36078/J2ME-Loader
+License: Apache License 2.0
+Pinned revision used by build workflow: 9b0fa48
+
+This kit does not redistribute the J2ME Loader source; the workflow clones it from the official repository during the build.
